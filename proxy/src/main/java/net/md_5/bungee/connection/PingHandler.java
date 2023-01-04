@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.BungeeCord;
-import net.md_5.bungee.BungeeServerInfo;
 import net.md_5.bungee.api.Callback;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.ServerPing;
@@ -29,6 +28,7 @@ public class PingHandler extends PacketHandler
     private final ServerInfo target;
     private final Callback<ServerPing> callback;
     private final int protocol;
+    private final String host;
     private ChannelWrapper channel;
 
     @Override
@@ -40,7 +40,8 @@ public class PingHandler extends PacketHandler
         channel.getHandle().pipeline().addAfter( PipelineUtils.FRAME_DECODER, PipelineUtils.PACKET_DECODER, new MinecraftDecoder( Protocol.STATUS, false, ProxyServer.getInstance().getProtocolVersion() ) );
         channel.getHandle().pipeline().addAfter( PipelineUtils.FRAME_PREPENDER, PipelineUtils.PACKET_ENCODER, encoder );
 
-        channel.write( new Handshake( protocol, target.getAddress().getHostString(), target.getAddress().getPort(), 1 ) );
+        System.out.println( "Hostname: " + host );
+        channel.write( new Handshake( protocol, host, target.getAddress().getPort(), 1 ) );
 
         encoder.setProtocol( Protocol.STATUS );
         channel.write( new StatusRequest() );
@@ -67,7 +68,6 @@ public class PingHandler extends PacketHandler
     {
         Gson gson = BungeeCord.getInstance().gson;
         ServerPing serverPing = gson.fromJson( statusResponse.getResponse(), ServerPing.class );
-        ( (BungeeServerInfo) target ).cachePing( serverPing );
         callback.done( serverPing, null );
         channel.close();
     }

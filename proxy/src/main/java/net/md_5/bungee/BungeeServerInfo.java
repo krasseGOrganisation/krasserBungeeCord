@@ -146,10 +146,10 @@ public class BungeeServerInfo implements ServerInfo
     @Override
     public void ping(final Callback<ServerPing> callback)
     {
-        ping( callback, ProxyServer.getInstance().getProtocolVersion() );
+        ping( callback, ProxyServer.getInstance().getProtocolVersion(), "" );
     }
 
-    public void ping(final Callback<ServerPing> callback, final int protocolVersion)
+    public void ping(final Callback<ServerPing> callback, final int protocolVersion, String host)
     {
         Preconditions.checkNotNull( callback, "callback" );
 
@@ -172,7 +172,7 @@ public class BungeeServerInfo implements ServerInfo
             {
                 if ( future.isSuccess() )
                 {
-                    future.channel().pipeline().get( HandlerBoss.class ).setHandler( new PingHandler( BungeeServerInfo.this, callback, protocolVersion ) );
+                    future.channel().pipeline().get( HandlerBoss.class ).setHandler( new PingHandler( BungeeServerInfo.this, callback, protocolVersion, host ) );
                 } else
                 {
                     callback.done( null, future.cause() );

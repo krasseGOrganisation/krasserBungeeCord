@@ -229,7 +229,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
 
         if ( forced != null && listener.isPingPassthrough() )
         {
-            ( (BungeeServerInfo) forced ).ping( pingBack, bungee.getProtocolVersion() );
+            ( (BungeeServerInfo) forced ).ping( pingBack, bungee.getProtocolVersion(), handshake.getHost() );
         } else
         {
             pingBack.done( getPingInfo( motd, protocol ), null );
@@ -291,7 +291,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
 
         if ( forced != null && listener.isPingPassthrough() )
         {
-            ( (BungeeServerInfo) forced ).ping( pingBack, handshake.getProtocolVersion() );
+            ( (BungeeServerInfo) forced ).ping( pingBack, handshake.getProtocolVersion(), handshake.getHost() );
         } else
         {
             pingBack.done( getPingInfo( motd, protocol ), null );
@@ -342,10 +342,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         {
             case 1:
                 // Ping
-                if ( bungee.getConfig().isLogPings() )
-                {
-                    bungee.getLogger().log( Level.INFO, "{0} has pinged", this );
-                }
+                bungee.getLogger().log( Level.INFO, "{0} has pinged", this );
                 thisState = State.STATUS;
                 ch.setProtocol( Protocol.STATUS );
                 break;

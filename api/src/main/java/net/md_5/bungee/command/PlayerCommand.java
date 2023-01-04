@@ -20,11 +20,13 @@ public abstract class PlayerCommand extends Command implements TabExecutor
     public PlayerCommand(String name)
     {
         super( name );
+        System.out.println( "PlayerCommand constructor called, Name:" + name );
     }
 
     public PlayerCommand(String name, String permission, String... aliases)
     {
         super( name, permission, aliases );
+        System.out.println( "PlayerCommand constructor called, Name:" + name );
     }
 
     @Override

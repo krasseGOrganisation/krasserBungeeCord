@@ -3,9 +3,14 @@ package net.md_5.bungee.module.cmd.server;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.chat.ClickEvent;
@@ -67,6 +72,51 @@ public class CommandServer extends Command implements TabExecutor
             ProxiedPlayer player = (ProxiedPlayer) sender;
 
             ServerInfo server = servers.get( args[0] );
+            if ( args[0].equals( "join" ) )
+            {
+                if ( args.length == 1 )
+                {
+                    sender.sendMessage( ProxyServer.getInstance().getTranslation( "username_needed" ) );
+                    return;
+                }
+                ProxiedPlayer targetPlayer = ProxyServer.getInstance().getPlayer( args[1] );
+                if ( targetPlayer == null || targetPlayer.getServer() == null )
+                {
+                    sender.sendMessage( ProxyServer.getInstance().getTranslation( "user_not_online" ) );
+                    return;
+                } else
+                {
+                    String serverName = null;
+                    try
+                    {
+                        URL url = new URL( "http://krassego.org:8083/proxyapi/find/" + args[1] );
+                        HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                        con.setRequestMethod( "GET" );
+                        BufferedReader in = new BufferedReader( new InputStreamReader( con.getInputStream() ) );
+                        String inputLine;
+                        StringBuffer content = new StringBuffer();
+                        while ( ( inputLine = in.readLine() ) != null )
+                        {
+                            content.append( inputLine );
+                        }
+                        in.close();
+                        int code = con.getResponseCode();
+                        if ( code == 404 )
+                        {
+                            player.sendMessage( ProxyServer.getInstance().getTranslation( "no_server" ) );
+                            return;
+                        }
+                        serverName = content.toString();
+                        player.sendMessage( "Want to move you to server: " + serverName );
+                    } catch ( Exception e )
+                    {
+                        System.out.println( e );
+                        player.sendMessage( ChatColor.RED + "An internal error occurred whilst executing this command, please check the console log for details." );
+                        return;
+                    }
+                    server = servers.get( serverName );
+                }
+            }
             if ( server == null )
             {
                 player.sendMessage( ProxyServer.getInstance().getTranslation( "no_server" ) );

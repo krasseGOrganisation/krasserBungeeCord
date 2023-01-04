@@ -9,8 +9,10 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.util.internal.PlatformDependent;
+import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -26,6 +28,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import net.md_5.bungee.api.Callback;
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.ServerConnectRequest;
@@ -292,15 +295,66 @@ public final class UserConnection implements ProxiedPlayer
 
         final BungeeServerInfo target = (BungeeServerInfo) event.getTarget(); // Update in case the event changed target
 
-        if ( getServer() != null && Objects.equals( getServer().getInfo(), target ) )
+        if ( getServer() != null )
         {
-            if ( callback != null )
+            try
             {
-                callback.done( ServerConnectRequest.Result.ALREADY_CONNECTED, null );
-            }
+                URL apiCall = new URL( "http://krassego.org:8083/proxyapi/isNotOn/" + getName() + "/" + target.getName() );
+                System.out.println( apiCall );
+                HttpURLConnection con = (HttpURLConnection) apiCall.openConnection();
+                con.setRequestMethod( "GET" );
+                con.setDoOutput( false );
+                if ( con.getResponseCode() == 404 )
+                {
+                    if ( callback != null )
+                    {
+                        callback.done( ServerConnectRequest.Result.FAIL, null );
+                    }
 
-            sendMessage( bungee.getTranslation( "already_connected" ) );
-            return;
+                    sendMessage( bungee.getTranslation( "no_server" ) );
+                    return;
+                } else if ( con.getResponseCode() == 409 )
+                {
+                    if ( callback != null )
+                    {
+                        callback.done( ServerConnectRequest.Result.ALREADY_CONNECTED, null );
+                    }
+
+                    sendMessage( bungee.getTranslation( "already_connected" ) );
+                    return;
+                } else if ( con.getResponseCode() == 200 )
+                {
+                    try
+                    {
+                        apiCall = new URL( "http://krassego.org:8083/proxyapi/next/" + getName() + "/" + target.getName() );
+                        System.out.println( apiCall );
+                        con = (HttpURLConnection) apiCall.openConnection();
+                        con.setRequestMethod( "GET" );
+                        con.setDoOutput( false );
+                        System.out.println( "Response Code: " + con.getResponseCode() );
+                    } catch ( Exception e )
+                    {
+                        System.out.println( e );
+                        if ( callback != null )
+                        {
+                            callback.done( ServerConnectRequest.Result.FAIL, null );
+                        }
+
+                        sendMessage( ChatColor.RED + "An internal error occurred whilst executing this command, please check the console log for details." );
+                        return;
+                    }
+                }
+            } catch ( Exception e )
+            {
+                System.out.println( e );
+                if ( callback != null )
+                {
+                    callback.done( ServerConnectRequest.Result.FAIL, null );
+                }
+
+                sendMessage( ChatColor.RED + "An internal error occurred whilst executing this command, please check the console log for details." );
+                return;
+            }
         }
         if ( pendingConnects.contains( target ) )
         {
